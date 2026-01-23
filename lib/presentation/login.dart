@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:projetfinal/data/datahelper.dart';
 import 'package:projetfinal/presentation/incription.dart';
 import 'package:projetfinal/presentation/notes.dart';
 
@@ -12,27 +13,41 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  bool _isPasswordHidden = true; 
 
-  void _login() {
-    // Ici on pourrait vérifier les identifiants
+  void _login() async {
     final email = _emailController.text;
     final password = _passwordController.text;
 
-    if (email == 'Daniel' && password == 'password') {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Connexion réussie !'),
-        backgroundColor: Colors.green,
-      ),
-    );
-    // Rediriger vers la page "Mes Notes"
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const MesNotesPage()),
-    );
-  } else {
+    if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("L'email ou mot de passe incorrect !")),
+        const SnackBar(
+          content: Text('Veuillez remplir tous les champs.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final user = await DatabaseHelper.instance.authenticateUser(email, password);
+    if (user != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Bienvenue, ${user.name} !'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const MesNotesPage()),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("E-mail ou mot de passe incorrect."),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -54,12 +69,15 @@ class _LoginPageState extends State<LoginPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center, 
             children: [
-              ClipOval(
-                child: const Image(
-                  image: AssetImage('assets/images/note.jpg'),
-                  height: 170,
-                  width: 170,
-                  fit: BoxFit.cover,
+              Padding(
+                padding: const EdgeInsets.only(bottom: 20), // Décalage vers le haut
+                child: ClipOval(
+                  child: const Image(
+                    image: AssetImage('assets/images/note.jpg'),
+                    height: 170,
+                    width: 170,
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
@@ -89,13 +107,26 @@ class _LoginPageState extends State<LoginPage> {
 
               // Champ 2 : Mot de passe
               SizedBox(
-                width: 280, 
+                width: 280,
                 child: TextFormField(
                   controller: _passwordController,
-                  obscureText: true, 
-                  decoration: const InputDecoration(
+                  obscureText: _isPasswordHidden, 
+                  decoration: InputDecoration(
                     labelText: 'Mot de passe',
-                    border: OutlineInputBorder(), 
+                    border: const OutlineInputBorder(),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isPasswordHidden
+                            ? Icons.visibility_off 
+                            : Icons.visibility, 
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isPasswordHidden =
+                              !_isPasswordHidden; 
+                        });
+                      },
+                    ),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {

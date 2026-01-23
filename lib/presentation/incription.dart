@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:projetfinal/data/datahelper.dart';
+import 'package:projetfinal/models/user.dart';
 import 'package:projetfinal/presentation/login.dart';
 
 class SignupPage extends StatefulWidget {
@@ -14,19 +16,51 @@ class _SignupPageState extends State<SignupPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  bool _isPasswordHidden = true; 
 
-  void _register() {
+  void _register() async {
     if (_formKey.currentState!.validate()) {
-      // Enregistrement des informations utilisateur
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Inscription réussie !')));
-
-      // Redirection vers la page de connexion
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginPage()),
-      );
+      try {
+        final newUser = User(
+          name: _nameController.text,
+          email: _emailController.text,
+          username: _usernameController.text,
+          password: _passwordController.text, 
+        );
+        await DatabaseHelper.instance.insertUser(newUser);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Inscription réussie !', style: TextStyle(color: Colors.white)),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginPage()),
+        );
+      } catch (e) {
+        if (e.toString().contains("UNIQUE constraint failed")) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Cet e-mail ou prénom est déjà utilisé !',
+                style: TextStyle(color: Colors.white),
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Erreur lors de l’inscription. Réessayez plus tard.',
+                style: TextStyle(color: Colors.white),
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
     }
   }
 
@@ -89,7 +123,6 @@ class _SignupPageState extends State<SignupPage> {
                     ),
                     const SizedBox(height: 16),
 
-                    
                     SizedBox(
                       width: 280, 
                       child: TextFormField(
@@ -112,9 +145,8 @@ class _SignupPageState extends State<SignupPage> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Champ 3 : Nom d'utilisateur
                     SizedBox(
-                      width: 280, // Largeur fixe centrée
+                      width: 280, 
                       child: TextFormField(
                         controller: _usernameController,
                         decoration: const InputDecoration(
@@ -135,17 +167,30 @@ class _SignupPageState extends State<SignupPage> {
                     const SizedBox(height: 16),
 
                     SizedBox(
-                      width: 280, 
+                      width: 280,
                       child: TextFormField(
                         controller: _passwordController,
-                        obscureText: true,
-                        decoration: const InputDecoration(
+                        obscureText: _isPasswordHidden, 
+                        decoration: InputDecoration(
                           labelText: 'Mot de passe',
-                          border: OutlineInputBorder(),
+                          border: const OutlineInputBorder(),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _isPasswordHidden
+                                  ? Icons.visibility_off 
+                                  : Icons.visibility, 
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _isPasswordHidden =
+                                    !_isPasswordHidden; 
+                              });
+                            },
+                          ),
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Veuillez entrer un mot de passe';
+                            return 'Veuillez entrer votre mot de passe';
                           }
                           if (value.length < 6) {
                             return 'Le mot de passe doit contenir au moins 6 caractères';
@@ -156,7 +201,6 @@ class _SignupPageState extends State<SignupPage> {
                     ),
                     const SizedBox(height: 24),
 
-                    
                     SizedBox(
                       width: 280, 
                       child: ElevatedButton(
@@ -190,16 +234,16 @@ class _SignupPageState extends State<SignupPage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const LoginPage(), // Naviguer vers la page de connexion
+                          builder: (context) => const LoginPage(), 
                         ),
                       );
                     },
                     child: const Text(
                       'Déjà un compte ? Connectez-vous',
                       style: TextStyle(
-                        color: Colors.blue, // Texte bleu
-                        fontSize: 16,       // Taille du texte
-                        decoration: TextDecoration.underline, // Texte souligné
+                        color: Colors.blue, 
+                        fontSize: 16,       
+                        decoration: TextDecoration.underline, 
                       ),
                     ),
                   )

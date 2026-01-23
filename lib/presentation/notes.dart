@@ -34,7 +34,14 @@ class _MesNotesPageState extends State<MesNotesPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.blue,
-        title: Text(_pageTitles[_selectedIndex]),
+        title: Text(
+        _pageTitles[_selectedIndex], 
+        style: const TextStyle(
+          color: Colors.white, 
+          fontSize: 20, 
+          fontWeight: FontWeight.bold, 
+        ),
+      ),
         centerTitle: true,
       ),
       body: _pages.elementAt(_selectedIndex), 
